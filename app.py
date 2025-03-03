@@ -106,7 +106,7 @@ def analyze_keywords(text, min_occurrences=3):
         'today', 'gonna', 'let', 'tell', 'talk', 'show', 'thanks', 'thank',
         
         # Additional words to filter based on user feedback
-        'out', 'told', 'while', 'wasn\'t', 'asked', 'they\'d', 'done', 'tried'
+        'out', 'told', 'while', 'wasn\'t', 'asked', 'they\'d', 'done', 'tried', 'back', 'even', 'other', 'wasnt', 'since', 'didnt', 'away', 'also', 'once', 'enough', 'much'
     }
     
     # Filter out stop words and short words (less than 3 chars)
