@@ -4,14 +4,13 @@ import os
 import re
 from collections import Counter
 from urllib.parse import urlparse, parse_qs
-import language_tool_python
 from pytube import YouTube
 from youtube_transcript_api import YouTubeTranscriptApi
 
 # Define the YouTubeTranscriber class directly in app.py
 class YouTubeTranscriber:
     def __init__(self):
-        self.language_tool = language_tool_python.LanguageTool('en-US')
+        pass
     
     def extract_video_id(self, youtube_url):
         """Extract the video ID from a YouTube URL."""
@@ -56,43 +55,14 @@ class YouTubeTranscriber:
             return "Unknown Video"
 
     def proofread_text(self, text):
-        """Proofread the text using LanguageTool."""
-        try:
-            matches = self.language_tool.check(text)
-            
-            # Create a corrected version of the text
-            corrected_text = text
-            offset = 0
-            
-            # Sort matches by their position in the text to avoid offsetting issues
-            for match in sorted(matches, key=lambda m: m.offset):
-                # Get the suggested replacement (if any)
-                if match.replacements:
-                    replacement = match.replacements[0]
-                    
-                    # Calculate the position considering previous corrections
-                    start = match.offset + offset
-                    end = match.offset + match.errorLength + offset
-                    
-                    # Replace the error with the correction
-                    corrected_text = corrected_text[:start] + replacement + corrected_text[end:]
-                    
-                    # Update the offset for future corrections
-                    offset += len(replacement) - match.errorLength
-            
-            # Return both the original and corrected texts
-            return {
-                'original': text,
-                'corrected': corrected_text,
-                'correction_count': len(matches)
-            }
-        except Exception as e:
-            print(f"Error proofreading text: {e}")
-            return {
-                'original': text,
-                'corrected': text,
-                'correction_count': 0
-            }
+        """Simple proofread function (without language_tool_python)."""
+        # Instead of using language_tool_python, we'll return the original text
+        # as both original and corrected
+        return {
+            'original': text,
+            'corrected': text,  # No correction without language_tool
+            'correction_count': 0
+        }
 
     def analyze_keywords(self, text, min_occurrences=3):
         """Analyze keywords that appear more than a specified number of times."""
@@ -141,7 +111,7 @@ class YouTubeTranscriber:
                 'message': 'Failed to retrieve transcript'
             }
         
-        # Proofread transcript
+        # Proofread transcript (simplified)
         proofread_result = self.proofread_text(transcript)
         
         # Analyze keywords
@@ -167,11 +137,8 @@ class YouTubeTranscriber:
             output = []
             output.append(f"Title: {video_title}")
             output.append(f"URL: {youtube_url}")
-            output.append("\n--- ORIGINAL TRANSCRIPT ---")
+            output.append("\n--- TRANSCRIPT ---")
             output.append(proofread_result['original'])
-            output.append("\n--- CORRECTED TRANSCRIPT ---")
-            output.append(proofread_result['corrected'])
-            output.append(f"\nCorrections made: {proofread_result['correction_count']}")
             output.append("\n--- KEYWORD ANALYSIS ---")
             
             if keywords:
@@ -191,7 +158,7 @@ st.set_page_config(
 
 # Page header
 st.title("YouTube Transcriber & Keyword Analyzer")
-st.markdown("Enter a YouTube URL to transcribe the video, proofread the transcript, and analyze keyword frequency.")
+st.markdown("Enter a YouTube URL to transcribe the video and analyze keyword frequency.")
 
 # Input form
 with st.form("youtube_form"):
@@ -211,28 +178,19 @@ if submitted and youtube_url:
             st.error(f"Error: {result.get('message', 'Failed to process video')}")
         else:
             # Display results in tabs
-            tab1, tab2, tab3 = st.tabs(["Video Info", "Transcript", "Keywords"])
+            tab1, tab2 = st.tabs(["Video Info & Transcript", "Keywords"])
             
             with tab1:
                 st.header("Video Information")
                 st.subheader(result['video_title'])
                 st.markdown(f"[Open on YouTube]({result['video_url']})")
                 
-            with tab2:
                 st.header("Transcript")
-                original_col, corrected_col = st.columns(2)
+                st.text_area("", result['transcript']['original'], height=400)
                 
-                with original_col:
-                    st.subheader("Original Transcript")
-                    st.text_area("", result['transcript']['original'], height=400)
+                st.info("Note: Proofreading has been disabled in this web version.")
                 
-                with corrected_col:
-                    st.subheader("Corrected Transcript")
-                    st.text_area("", result['transcript']['corrected'], height=400)
-                
-                st.info(f"Corrections made: {result['transcript']['correction_count']}")
-                
-            with tab3:
+            with tab2:
                 st.header("Keyword Analysis")
                 
                 if result['keywords']:
@@ -243,7 +201,7 @@ if submitted and youtube_url:
                     # Create a dataframe for the chart
                     chart_data = {"Keyword": keywords, "Count": counts}
                     
-                    # Display the data
+                    # Create bar chart - making sure we have the right format for Streamlit
                     st.bar_chart(data=chart_data, x="Keyword", y="Count")
                     
                     # Create a table with keywords and counts
