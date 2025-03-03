@@ -2,7 +2,6 @@ import streamlit as st
 import re
 from collections import Counter
 import pandas as pd
-from functools import reduce
 
 def analyze_keywords(text, min_occurrences=3):
     """Analyze keywords that appear more than a specified number of times."""
@@ -200,19 +199,22 @@ for i, tab in enumerate(script_tabs):
 
 # Analysis settings
 st.header("Analysis Settings")
-col1, col2, col3 = st.columns(3)
+col1, col2 = st.columns(2)
 
 with col1:
     min_occurrences = st.slider("Minimum occurrences per script", min_value=2, max_value=15, value=3)
 
 with col2:
-    min_scripts_for_common = st.slider("Minimum scripts for common keywords", 
-                                     min_value=2, 
-                                     max_value=min(10, sum(1 for s in script_texts if s.strip())),
-                                     value=min(2, sum(1 for s in script_texts if s.strip())))
+    # Fixed min_scripts_for_common input - using number input instead of slider to avoid errors
+    min_scripts_for_common = 2
+    st.number_input("Minimum scripts for common keywords", 
+                    min_value=2, 
+                    max_value=10,
+                    value=2,
+                    key="min_scripts")
 
-with col3:
-    submitted = st.button("Analyze All Scripts", type="primary")
+# Submit button in its own row
+submitted = st.button("Analyze All Scripts", type="primary")
 
 # Process scripts when the button is clicked
 if submitted:
@@ -236,12 +238,18 @@ if submitted:
                 })
                 all_keyword_counts.append(word_counts)
             
+            # Get min_scripts_for_common from the number input
+            min_scripts_for_common = st.session_state.min_scripts
+            
             # Find common keywords across scripts
-            common_keywords = find_common_keywords(
-                all_keyword_counts, 
-                min_scripts_for_common, 
-                min_occurrences
-            )
+            if len(valid_scripts) > 1:
+                common_keywords = find_common_keywords(
+                    all_keyword_counts, 
+                    min_scripts_for_common, 
+                    min_occurrences
+                )
+            else:
+                common_keywords = {}
         
         # Display results in tabs
         if len(valid_scripts) > 1:
